@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <title>Date by aa8562373</title>
+  </head>
+
+  <body>
+    <div id="container">
+      <div class="inner">
+
+        <header>
+          <h1>Date</h1>
+          <h2>日期插件</h2>
+        </header>
+
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/aa8562373/date/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/aa8562373/date/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/aa8562373/date" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <p>define(function(require) {
+    //日期
+    var DatePicker = function(opts) {
+        var me = this,
+            options = {
+                minDate: '',
+                maxDate: '',
+                $wrap: $('.date-wrap'),
+                today: '',
+                monthOffset: '0,6',
+                onRender: function(date) {</p>
+
+<pre><code>            },
+            onChoose: function(date) {
+
+            }
+        };
+
+    this.elementMap = {};
+
+    this.opts = $.extend({}, options, opts);
+    this.init();
+
+    return {
+        getElement: function(date) {
+            return me.elementMap[date];
+        },
+        onChoose: function() {
+
+        },
+        choose: function(date) {
+
+        },
+        set: function(column, date) {
+            column = $.inArray(column, ['minDate', 'maxDate']) === -1 ? 'minDate': column; 
+            me.opts[column] = date;
+            me.toggleDisabled();
+        }
+    };
+},
+
+_titleTemplate = '&lt;%=year%&gt;&lt;span class="year"&gt;年&lt;/span&gt;&lt;%=month%&gt;&lt;span class="year"&gt;月&lt;/span&gt;',
+
+_monthTemplate = ''
+    +'&lt;div class="dateWrap"&gt;'
+    +   '&lt;h2&gt;&lt;%=title%&gt;&lt;/h2&gt;'
+    +   '&lt;table border="0" cellpadding="0" cellspacing="0"&gt;'
+    +       '&lt;thead&gt;'
+    +       '&lt;tr&gt;'
+    +           '&lt;td class="td_xq"&gt;SUN&lt;/td&gt;'
+    +           '&lt;td class="td_xq"&gt;MON&lt;/td&gt;'
+    +           '&lt;td class="td_xq"&gt;TUE&lt;/td&gt;'
+    +           '&lt;td class="td_xq"&gt;WED&lt;/td&gt;'
+    +           '&lt;td class="td_xq"&gt;THU&lt;/td&gt;'
+    +           '&lt;td class="td_xq"&gt;FRI&lt;/td&gt;'
+    +           '&lt;td class="td_xq"&gt;STA&lt;/td&gt;'
+    +       '&lt;/tr&gt;'
+    +       '&lt;/thead&gt;'
+    +       '&lt;tbody class="tbody"&gt;&lt;/tbody&gt;'
+    +   '&lt;/table&gt;'
+    +'&lt;/div&gt;',
+
+_itemTemplate = '&lt;td data-date="&lt;%=date%&gt;"&gt;&lt;span&gt;&lt;%=day%&gt;&lt;/span&gt;&lt;/td&gt;';
+
+DatePicker.prototype = {
+
+    constructor: DatePicker,
+
+    init: function() {
+        this.render();
+        this.event();
+    },
+
+    render: function() {
+        var me = this,
+            $wrap = this.opts.$wrap,
+            today = this.opts.today ? this.parseDate(this.opts.today) : new Date(),
+            monthMap = this.getMonthMap(today);
+
+        this.opts.today = this.getDate(today);
+
+        $.each(monthMap, function(k, v) {
+            me.renderItem(v[0], v[1], $wrap);
+        });
+    },
+
+    event: function() {
+        var me = this, $wrap = this.opts.$wrap;
+        $wrap.on('click', 'td', function() {
+            var $this = $(this), date;
+            if ($this.hasClass('disabled')) return;
+            date = $this.data('date');
+
+            if (date) {
+                me.opts.onChoose &amp;&amp; me.opts.onChoose(date, $this);
+            }
+        })
+    },
+
+    renderItem: function(y, m, $wrap) {
+        var $month = $(this.template(_monthTemplate, {title: this.template(_titleTemplate, {year: y, month: this.fillZero(m)})})).appendTo($wrap),
+            $item = $month.find('.tbody'),
+            start = new Date(y, m - 1, 1).getDay(),
+            length = new Date(y, m, 0).getDate(),
+            count = start + length,
+            offset = (count % 7 === 0) ? count/7 : Math.floor((count+7) / 7),
+            $tr, date, day, $td;
+
+        for (var i = 0; i &lt; offset; i++) {
+            $tr = $('&lt;tr&gt;&lt;/tr&gt;').appendTo($item);
+
+            for (var j = 0; j &lt; 7; j++) {
+                day = i * 7 + j - start + 1;
+                if (day &gt; 0 &amp;&amp; day &lt;= length) {
+                    date = this.fillDate(y, m, day);
+                    $td = $(this.template(_itemTemplate, {date: date, day: day})).appendTo($tr);
+                    this.onRender(date, $td[0]);
+                } else {
+                    $tr.append('&lt;td&gt; &lt;/td&gt;');
+                }
+            }
+        }
+    },
+
+    onRender: function(date, elem) {
+        var minDate = this.opts.minDate, maxDate = this.opts.maxDate, today = this.opts.today;
+        this.elementMap[date] = elem;
+
+        (minDate &amp;&amp; (date &lt; minDate)) &amp;&amp; $(elem).addClass('disabled');
+        (maxDate &amp;&amp; (date &gt; maxDate)) &amp;&amp; $(elem).addClass('disabled');
+        (date == today) &amp;&amp; $(elem).addClass('today');
+
+        this.opts.onRender &amp;&amp; this.opts.onRender.apply(this, arguments);
+    },
+
+    getMonthMap: function(today) {
+        var year = today.getFullYear(), month = today.getMonth(), 
+            offsets = this.opts.monthOffset.split(','),
+            min = parseInt(offsets[0]), max = parseInt(offsets[1]),
+            map = [], m, y;
+
+        for (var i = min; i &lt;= max; i++) {
+            m = month+i;
+            y = year + Math.floor(m / 12);
+
+            m = (m % 12 + 12) % 12;
+            map.push([y, m+1]);
+        }
+
+        return map;
+    },
+
+    toggleDisabled: function() {
+        var minDate = this.opts.minDate, maxDate = this.opts.maxDate;
+
+        $.each(this.elementMap, function() {
+            var $this = $(this), date = $this.data('date');
+            $this.toggleClass('disabled', (minDate ? (date &lt; minDate) : false) || (maxDate ? (date &gt; maxDate) : false));
+        })
+    },
+
+    parseDate: function(date) {
+        var matched;
+        if (matched = date.match(/(\d{4})-(\d{2})-(\d{2})/)) {
+            return new Date(matched[1], matched[2] - 1, matched[3]);
+        }
+    },
+
+    fillDate: function(y, m, d) {
+        return y + '-' + this.fillZero(m) + '-' + this.fillZero(d);
+    },
+
+    fillZero: function(i) {
+        return i &lt; 10 ? ('0' + i) : i;
+    },
+
+    getDate: function(dateObj) {
+        return this.fillDate(dateObj.getFullYear(), dateObj.getMonth()+1, dateObj.getDate());
+    },
+
+    template: function(temp, data) {
+        return temp.replace(/\&lt;\%\=(\w+)\%\&gt;/g, function(word, key) {return data[key] || '';});
+    }
+
+};
+
+return DatePicker;
+</code></pre>
+
+<p>});</p>
+        </section>
+
+        <footer>
+          Date is maintained by <a href="https://github.com/aa8562373">aa8562373</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
+    </div>
+  </body>
+</html>
