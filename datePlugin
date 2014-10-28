@@ -1,0 +1,196 @@
+
+
+define(function(require) {
+	//日期
+	var DatePicker = function(opts) {
+		var me = this,
+			options = {
+				minDate: '',
+				maxDate: '',
+				$wrap: $('.date-wrap'),
+				today: '',
+				monthOffset: '0,6',
+				onRender: function(date) {
+					
+				},
+				onChoose: function(date) {
+
+				}
+			};
+		
+		this.elementMap = {};
+		
+		this.opts = $.extend({}, options, opts);
+		this.init();
+		
+		return {
+			getElement: function(date) {
+				return me.elementMap[date];
+			},
+			onChoose: function() {
+				
+			},
+			choose: function(date) {
+				
+			},
+			set: function(column, date) {
+				column = $.inArray(column, ['minDate', 'maxDate']) === -1 ? 'minDate': column; 
+				me.opts[column] = date;
+				me.toggleDisabled();
+			}
+		};
+	},
+	
+	_titleTemplate = '<%=year%><span class="year">年</span><%=month%><span class="year">月</span>',
+	
+	_monthTemplate = ''
+		+'<div class="dateWrap">'
+		+	'<h2><%=title%></h2>'
+		+	'<table border="0" cellpadding="0" cellspacing="0">'
+		+		'<thead>'
+		+		'<tr>'
+		+			'<td class="td_xq">SUN</td>'
+		+			'<td class="td_xq">MON</td>'
+		+			'<td class="td_xq">TUE</td>'
+		+			'<td class="td_xq">WED</td>'
+		+			'<td class="td_xq">THU</td>'
+		+			'<td class="td_xq">FRI</td>'
+		+			'<td class="td_xq">STA</td>'
+		+		'</tr>'
+		+		'</thead>'
+		+		'<tbody class="tbody"></tbody>'
+		+	'</table>'
+		+'</div>',
+		
+	_itemTemplate = '<td data-date="<%=date%>"><span><%=day%></span></td>';
+	
+	DatePicker.prototype = {
+		
+		constructor: DatePicker,
+			
+		init: function() {
+			this.render();
+			this.event();
+		},
+		
+		render: function() {
+			var me = this,
+				$wrap = this.opts.$wrap,
+				today = this.opts.today ? this.parseDate(this.opts.today) : new Date(),
+				monthMap = this.getMonthMap(today);
+			
+			this.opts.today = this.getDate(today);
+				
+			$.each(monthMap, function(k, v) {
+				me.renderItem(v[0], v[1], $wrap);
+			});
+		},
+		
+		event: function() {
+			var me = this, $wrap = this.opts.$wrap;
+			$wrap.on('click', 'td', function() {
+				var $this = $(this), date;
+				if ($this.hasClass('disabled')) return;
+				date = $this.data('date');
+				
+				if (date) {
+					me.opts.onChoose && me.opts.onChoose(date, $this);
+				}
+			})
+		},
+		
+		renderItem: function(y, m, $wrap) {
+			var $month = $(this.template(_monthTemplate, {title: this.template(_titleTemplate, {year: y, month: this.fillZero(m)})})).appendTo($wrap),
+				$item = $month.find('.tbody'),
+				start = new Date(y, m - 1, 1).getDay(),
+				length = new Date(y, m, 0).getDate(),
+				count = start + length,
+				offset = (count % 7 === 0) ? count/7 : Math.floor((count+7) / 7),
+				$tr, date, day, $td;
+			
+			for (var i = 0; i < offset; i++) {
+				$tr = $('<tr></tr>').appendTo($item);
+				
+				for (var j = 0; j < 7; j++) {
+					day = i * 7 + j - start + 1;
+					if (day > 0 && day <= length) {
+						date = this.fillDate(y, m, day);
+						$td = $(this.template(_itemTemplate, {date: date, day: day})).appendTo($tr);
+						this.onRender(date, $td[0]);
+					} else {
+						$tr.append('<td> </td>');
+					}
+				}
+			}
+		},
+		
+		onRender: function(date, elem) {
+			var minDate = this.opts.minDate, maxDate = this.opts.maxDate, today = this.opts.today;
+			this.elementMap[date] = elem;
+			
+			(minDate && (date < minDate)) && $(elem).addClass('disabled');
+			(maxDate && (date > maxDate)) && $(elem).addClass('disabled');
+			(date == today) && $(elem).addClass('today');
+			
+			this.opts.onRender && this.opts.onRender.apply(this, arguments);
+		},
+		
+		getMonthMap: function(today) {
+			var year = today.getFullYear(), month = today.getMonth(), 
+				offsets = this.opts.monthOffset.split(','),
+				min = parseInt(offsets[0]), max = parseInt(offsets[1]),
+				map = [], m, y;
+			
+			for (var i = min; i <= max; i++) {
+				m = month+i;
+				y = year + Math.floor(m / 12);
+				
+				m = (m % 12 + 12) % 12;
+				map.push([y, m+1]);
+			}
+			
+			return map;
+		},
+		
+		toggleDisabled: function() {
+			var minDate = this.opts.minDate, maxDate = this.opts.maxDate;
+			
+			$.each(this.elementMap, function() {
+				var $this = $(this), date = $this.data('date');
+				$this.toggleClass('disabled', (minDate ? (date < minDate) : false) || (maxDate ? (date > maxDate) : false));
+			})
+		},
+		
+		parseDate: function(date) {
+			var matched;
+			if (matched = date.match(/(\d{4})-(\d{2})-(\d{2})/)) {
+				return new Date(matched[1], matched[2] - 1, matched[3]);
+			}
+		},
+		
+		fillDate: function(y, m, d) {
+			return y + '-' + this.fillZero(m) + '-' + this.fillZero(d);
+		},
+		
+		fillZero: function(i) {
+			return i < 10 ? ('0' + i) : i;
+		},
+		
+		getDate: function(dateObj) {
+			return this.fillDate(dateObj.getFullYear(), dateObj.getMonth()+1, dateObj.getDate());
+		},
+		
+		template: function(temp, data) {
+        	return temp.replace(/\<\%\=(\w+)\%\>/g, function(word, key) {return data[key] || '';});
+        }
+			
+	};
+	
+	return DatePicker;
+});
+
+
+
+
+
+
